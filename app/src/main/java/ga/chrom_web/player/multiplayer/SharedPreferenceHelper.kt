@@ -37,7 +37,6 @@ class SharedPreferenceHelper {
     }
 
     fun saveUser(nick: String, color: Int) {
-        // TODO: maybe save color in String ???
         val editor = prefs.edit()
         editor.putString(PREF_NICK, nick)
         editor.putString(PREF_COLOR, removeAlpha(color))

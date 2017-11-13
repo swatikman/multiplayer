@@ -21,6 +21,11 @@ class ConnectionSocketManager : SocketManager() {
         }
     }
 
+    fun disconnect() {
+        Utils.debugLog("Disconnecting...")
+        socket.disconnect()
+    }
+
     override fun subscribeOnEvents() {
         socket.on(SocketManager.EVENT_CONNECTED) { args ->
             Utils.debugLog("Connected. Data: " + args[0])
@@ -34,13 +39,12 @@ class ConnectionSocketManager : SocketManager() {
             Utils.debugLog("Someone disconnect: " + args[0])
             connectionListener?.someoneDisconnected(JsonUtil.parseNick(args[0]))
         }
+        // we receive pings each 25 seconds
+        // send pong back
         socket.on(Socket.EVENT_PING, {
-//            Utils.debugLog("Ping")
             socket.emit(Socket.EVENT_PONG)
         })
-//        socket.on(Socket.EVENT_PONG, {
-//            Utils.debugLog("Pong")
-//        })
+
         socket.on(Socket.EVENT_DISCONNECT) { _ -> Utils.debugLog("Disconnected!!!") }
         socket.on(Socket.EVENT_RECONNECT) { _ -> Utils.debugLog("Reconnect successful") }
     }

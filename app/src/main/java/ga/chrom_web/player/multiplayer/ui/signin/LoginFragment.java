@@ -1,9 +1,7 @@
 package ga.chrom_web.player.multiplayer.ui.signin;
 
 
-import android.arch.lifecycle.LifecycleActivity;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -17,7 +15,6 @@ import com.pes.androidmaterialcolorpickerdialog.ColorPicker;
 
 import ga.chrom_web.player.multiplayer.R;
 import ga.chrom_web.player.multiplayer.databinding.FragmentLoginBinding;
-import ga.chrom_web.player.multiplayer.ui.player.PlayerActivity;
 
 /**
  * A simple {@link Fragment} subclass.

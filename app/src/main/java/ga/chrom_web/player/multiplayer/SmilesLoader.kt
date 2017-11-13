@@ -15,9 +15,8 @@ import kotlin.concurrent.thread
 class SmilesLoader {
 
     companion object {
-        private const val SMILES_DATA_LINK = "http://player.chrom-web.ga/api/smiles.php"
-        // TODO: get smiles version link
-        private const val SMILES_VERSION_LINK = "http://player.chrom-web.ga/api/check.php"
+        private const val SMILES_DATA_LINK = "http://player.chrom-web.ga/api/smiles"
+        private const val SMILES_VERSION_LINK = "http://player.chrom-web.ga/api/check"
         private const val SMILES_NAMES_FILENAME = "smiles"
     }
 

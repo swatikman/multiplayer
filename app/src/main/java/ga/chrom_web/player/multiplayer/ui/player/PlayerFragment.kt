@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.app.Fragment
-import android.support.v4.view.MarginLayoutParamsCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.LinearLayoutManager
@@ -18,6 +17,7 @@ import android.view.OrientationEventListener
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.LinearLayout
 import ga.chrom_web.player.multiplayer.R
 import ga.chrom_web.player.multiplayer.Utils
 import ga.chrom_web.player.multiplayer.data.ChatItem
@@ -32,16 +32,22 @@ class PlayerFragment : Fragment() {
         private const val SMILES_IN_ROW_PORTRAIT = 7
         private const val SMILES_IN_ROW_LANDSCAPE = 4
         private const val KEYBOARD_HEIGHT_IN_DP = 263
+
+        // keys for savedInstanceState
         private const val MESSAGES = "messages"
+        private const val IS_FULLSCREEN = "isFullScreen"
     }
 
-    private lateinit var mYoutubePlayerFragment: CustomYoutubePlayerFragment
+    private lateinit var youtubePlayerFragment: CustomYoutubePlayerFragment
     private lateinit var mViewModel: PlayerViewModel
     private lateinit var mBinding: FragmentPlayerBinding
     private var mChatAdapter: ChatAdapter? = null
-    private var mIsOrientationChangedByButton = false
+    //    private var mIsOrientationChangedByButton = false
     private var mIsSmilesLayoutVisible = false
     private var mHandler: Handler = Handler(Looper.getMainLooper())
+    private var isFullScreen = false
+    private var isLandscape = false
+    private var orientationEventListener: OrientationEventListener? = null
 
     private val screenOrientation: Int
         get() = resources.configuration.orientation
@@ -52,25 +58,38 @@ class PlayerFragment : Fragment() {
         Utils.debugLog("Starting room fragment...")
         mBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_player, container, false)
 
-        // TODO: is it good or bad idea setRetainInstance(true)???
-
-        mYoutubePlayerFragment = CustomYoutubePlayerFragment()
+        youtubePlayerFragment = CustomYoutubePlayerFragment()
         fragmentManager.beginTransaction()
-                .replace(R.id.youtubeContainer, mYoutubePlayerFragment)
+                .replace(R.id.youtubeContainer, youtubePlayerFragment)
                 .commit()
 
-        mYoutubePlayerFragment.playerListener = object : CustomYoutubePlayerFragment.PlayerListener {
+        youtubePlayerFragment.playerListener = object : CustomYoutubePlayerFragment.PlayerListener {
             override fun onClickFullscreen() {
-                mIsOrientationChangedByButton = true
-                if (activity.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                if (!isFullScreen) {
+                    Utils.debugLog("not full screen")
+//                    isFullScreen = true
+                    if (screenOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                        toggleLandscapeAndFullscreen()
+                    } else {
+                        isFullScreen = true
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    }
                 } else {
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    Utils.debugLog("full screen " + screenOrientation)
+                    if (screenOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                        toggleLandscapeAndFullscreen()
+                    }
+                    /*  else {
+                          Utils.debugLog("just ")
+                          isFullScreen = false
+                      }*/
                 }
             }
 
             override fun onClickUpload() {
                 createUploadDialog()
+//                toggleLandscapeAndFullscreen()
             }
 
             override fun onRewind(timeInMillis: Int) {
@@ -92,20 +111,31 @@ class PlayerFragment : Fragment() {
 
         initChat()
 
-        savedInstanceState?.let {
-            val messages = savedInstanceState.getSerializable(MESSAGES) as ArrayList<ChatItem>
+        savedInstanceState?.let { inState ->
+            val messages = inState.getSerializable(MESSAGES) as ArrayList<ChatItem>
+            isFullScreen = inState.getBoolean(IS_FULLSCREEN)
+            Utils.debugLog("getting previous fullscreen " + isFullScreen)
             mChatAdapter!!.addItems(messages)
         }
 
-        val orientationEventListener = object : OrientationEventListener(activity) {
+        if (isFullScreen) {
+            val layoutParams = mBinding.youtubeContainer.layoutParams
+            if (layoutParams is LinearLayout.LayoutParams) {
+                layoutParams.weight = 0f
+            }
+        }
+
+        orientationEventListener = object : OrientationEventListener(activity) {
             override fun onOrientationChanged(orientation: Int) {
                 val epsilon = 10
                 val leftLandscape = 90
                 val rightLandscape = 270
-                val portraitInverse = 180
-                val portraitNormal = 0
-                // TODO: continue
-                if (epsilonCheck(orientation, leftLandscape, epsilon) || epsilonCheck(orientation, rightLandscape, epsilon)) {
+                isLandscape = epsilonCheck(orientation, leftLandscape, epsilon) || epsilonCheck(orientation, rightLandscape, epsilon)
+                if (!isFullScreen) {
+                    return
+                }
+                if (isLandscape) {
+                    isFullScreen = false
                     activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
                 }
             }
@@ -114,10 +144,34 @@ class PlayerFragment : Fragment() {
                 return a > b - epsilon && a < b + epsilon
             }
         }
-        orientationEventListener.enable()
+        orientationEventListener?.enable()
         return mBinding.root
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // there's not fullscreen in portrait orientation
+        Utils.debugLog("whose first")
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            isFullScreen = false
+        }
+    }
+
+    private fun toggleLandscapeAndFullscreen() {
+        Utils.debugLog("toggle " + isFullScreen)
+        if (isFullScreen) {
+            (mBinding.youtubeContainer.layoutParams as LinearLayout.LayoutParams).weight = 0.3f
+        } else {
+            (mBinding.youtubeContainer.layoutParams as LinearLayout.LayoutParams).weight = 0f
+        }
+        isFullScreen = !isFullScreen
+        mBinding.youtubeContainer.requestLayout()
+        if (isLandscape) {
+            mHandler.post({
+                youtubePlayerFragment.updateControlsPosition(mBinding.youtubeContainer.width)
+            })
+        }
+    }
 
     /**
      *  Hides smile keyboard
@@ -137,7 +191,7 @@ class PlayerFragment : Fragment() {
     }
 
     /**
-     *  Hides smile keyboard
+     *  Shows smile keyboard
      *  On portrait mode will change size of keyboard to KEYBOARD_HEIGHT_IN_DP
      *  On landscape mode only change visibility to View.VISIBLE
      */
@@ -184,7 +238,7 @@ class PlayerFragment : Fragment() {
 
         // only in portrait mode
         mBinding.eraseSmile?.setOnClickListener {
-            eraseSmileOrLastLetter();
+            eraseSmileOrLastLetter()
         }
 
         val smilesAdapter = SmilesAdapter(convertSmilesPaths(smilePaths))
@@ -260,6 +314,7 @@ class PlayerFragment : Fragment() {
     }
 
     private fun initChat() {
+
         mChatAdapter = ChatAdapter()
 
         val layoutManager = LinearLayoutManager(activity)
@@ -274,7 +329,7 @@ class PlayerFragment : Fragment() {
 //        edittext.setText("https://www.youtube.com/watch?v=XGmFF82PE50")
         edittext.setText(link)
         val adb = AlertDialog.Builder(activity)
-        adb.setTitle("Enter youtube video link")
+        adb.setTitle(getString(R.string.dialog_upload_title))
         // TODO: validate link for only youtube videos
         adb.setView(edittext)
 
@@ -289,12 +344,12 @@ class PlayerFragment : Fragment() {
 
         mViewModel.videoLink.observe(this, Observer { videoLink ->
             videoLink?.let {
-                mYoutubePlayerFragment.loadVideo(videoLink)
+                youtubePlayerFragment.loadVideo(videoLink)
             }
         })
         mViewModel.videoTime.observe(this, Observer { timeInMillis ->
             timeInMillis?.let {
-                mYoutubePlayerFragment.seekToMillis(timeInMillis)
+                youtubePlayerFragment.seekToMillis(timeInMillis)
             }
         })
         mViewModel.shouldPlay.observe(this, Observer { shouldPlay ->
@@ -304,9 +359,9 @@ class PlayerFragment : Fragment() {
         })
         mViewModel.playerData.observe(this, Observer { playerData ->
             playerData?.let {
-                mYoutubePlayerFragment.loadVideo(playerData.getVideo(),
+                youtubePlayerFragment.loadVideo(playerData.getVideo(),
                         playerData.getTimeInMilli(), playerData.isPlaying())
-                // if we there's share link from other app open upload dialog
+                // if there's share link from other app open upload dialog
                 arguments?.getString(PlayerActivity.SHARE_LINK)?.let { shareLink ->
                     createUploadDialog(shareLink)
                 }
@@ -335,21 +390,23 @@ class PlayerFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+        // save chat messages
         mChatAdapter?.let { adapter ->
             // make last message null to not post it on fragment retain
             mViewModel.message.value = null
             outState.putSerializable(MESSAGES, adapter.items)
         }
-
-
+        Utils.debugLog("saving fullscreen " + isFullScreen)
+        outState.putBoolean(IS_FULLSCREEN, isFullScreen)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        mYoutubePlayerFragment.onParentViewDestroy()
+        youtubePlayerFragment.onParentViewDestroy()
+        orientationEventListener?.disable()
         // TODO: make it better
         // if it is configuration then save time to retain it later
-        val currentTimeMillis = mYoutubePlayerFragment.getCurrentTimeMillis()
+        val currentTimeMillis = youtubePlayerFragment.getCurrentTimeMillis()
         currentTimeMillis?.let { time ->
             mViewModel.setCurrentTime(time / 1000)
         }
@@ -358,9 +415,9 @@ class PlayerFragment : Fragment() {
 
     private fun playOrPause(shouldPlay: Boolean) {
         if (shouldPlay) {
-            mYoutubePlayerFragment.play()
+            youtubePlayerFragment.play()
         } else {
-            mYoutubePlayerFragment.pause()
+            youtubePlayerFragment.pause()
         }
     }
 
@@ -377,6 +434,10 @@ class PlayerFragment : Fragment() {
         return false
     }
 
+    /**
+     *  Receives intent share from other app
+     *  Method will be called if fragment is in RESUME mode
+     */
     fun receiveShare(link: String) {
         createUploadDialog(link)
     }

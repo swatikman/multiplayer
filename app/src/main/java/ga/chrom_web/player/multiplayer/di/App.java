@@ -16,7 +16,6 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        // TODO: turn off crashlytics for a while
         if (!BuildConfig.BUILD_TYPE.equals("debug")) {
             Fabric.with(this, new Crashlytics());
         }

@@ -19,7 +19,7 @@ import ga.chrom_web.player.multiplayer.BuildConfig
 import ga.chrom_web.player.multiplayer.R
 import ga.chrom_web.player.multiplayer.Utils
 import android.util.TypedValue
-
+import android.widget.PopupMenu
 
 
 class CustomYoutubePlayerFragment : Fragment(), YouTubePlayer.OnInitializedListener {
@@ -52,12 +52,14 @@ class CustomYoutubePlayerFragment : Fragment(), YouTubePlayer.OnInitializedListe
             fragmentManager.beginTransaction().replace(R.id.youtubeContainer, youTubeFragment).commit()
             youTubeFragment?.initialize(BuildConfig.YouTubeApiKey, this)
         }
-
+        realView = view
         view.post({
             initControls(view, youTubeFragment!!.view!!.width, youTubeFragment!!.view!!.height)
         })
         return view
     }
+
+    private lateinit var realView: View
 
 
     override fun onAttach(context: Context?) {
@@ -126,6 +128,8 @@ class CustomYoutubePlayerFragment : Fragment(), YouTubePlayer.OnInitializedListe
             override fun onVideoEnded() {}
 
             override fun onError(errorReason: YouTubePlayer.ErrorReason) {
+                // TODO: init again ???
+                mIsPlayerInitialized = false
                 Utils.debugLog("ERROR" + errorReason.toString())
             }
         })
@@ -182,6 +186,18 @@ class CustomYoutubePlayerFragment : Fragment(), YouTubePlayer.OnInitializedListe
         })
     }
 
+    fun updateControlsPosition(width: Int) {
+        mHandler.post({
+            popupWindow?.isShowing
+            popupWindow?.width = width
+            popupWindow?.dismiss()
+
+            val leftTopPosition = Utils.getStatusBarHeight(mContext)
+
+            popupWindow?.showAsDropDown(realView,0,leftTopPosition)
+        })
+    }
+
     private fun hidePlayerControls() {
         popupView.animate().alpha(0f).setDuration(CONTROLS_ANIMATION_DURATION)
                 .withEndAction {
@@ -234,7 +250,8 @@ class CustomYoutubePlayerFragment : Fragment(), YouTubePlayer.OnInitializedListe
         mIsProgressActive = true
         mHandler.post(object : Runnable {
             override fun run() {
-                // TODO: find better way to stop timer
+                // if exception occurs it means old player released
+                // and stop using timer for this player
                 try {
                     mPlayer?.let {
                         popupView.findViewById<SeekBar>(R.id.videoProgress).progress = mPlayer!!.currentTimeMillis

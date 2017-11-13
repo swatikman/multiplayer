@@ -12,6 +12,7 @@ import ga.chrom_web.player.multiplayer.SocketManager;
 import ga.chrom_web.player.multiplayer.SmilesLoader;
 import ga.chrom_web.player.multiplayer.ui.SmilesAdapter;
 import ga.chrom_web.player.multiplayer.ui.player.ChatAdapter;
+import ga.chrom_web.player.multiplayer.ui.player.PlayerActivityViewModel;
 import ga.chrom_web.player.multiplayer.ui.player.PlayerViewModel;
 import ga.chrom_web.player.multiplayer.SharedPreferenceHelper;
 import ga.chrom_web.player.multiplayer.ui.signin.LoginViewModel;
@@ -38,4 +39,6 @@ public interface AppComponent {
     void inject(@NotNull SmilesAdapter smilesAdapter);
 
     void inject(ChatAdapter chatAdapter);
+
+    void inject(@NotNull PlayerActivityViewModel playerActivityViewModel);
 }

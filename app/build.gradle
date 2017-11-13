@@ -34,6 +34,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kapt {
+        generateStubs = true
+    }
+
 }
 
 dependencies {
@@ -70,8 +74,5 @@ dependencies {
     annotationProcessor 'com.google.dagger:dagger-compiler:2.11'
     kapt "com.google.dagger:dagger-compiler:2.11"
     kapt 'com.android.databinding:compiler:3.0.0-rc1'
-}
-kapt {
-    generateStubs = true
 }
 

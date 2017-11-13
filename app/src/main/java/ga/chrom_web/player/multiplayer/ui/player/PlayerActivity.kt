@@ -1,10 +1,12 @@
 package ga.chrom_web.player.multiplayer.ui.player
 
+import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.WindowManager
 import ga.chrom_web.player.multiplayer.R
+import ga.chrom_web.player.multiplayer.Utils
 
 class PlayerActivity : AppCompatActivity() {
 
@@ -13,6 +15,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private var mPlayerFragment: PlayerFragment? = null
+    private lateinit var viewModel: PlayerActivityViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,12 +35,14 @@ class PlayerActivity : AppCompatActivity() {
                     .replace(R.id.container, mPlayerFragment)
                     .commit()
         }
+        viewModel = ViewModelProviders.of(this).get(PlayerActivityViewModel::class.java)
     }
+
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         // activity in singleInstance mode
-        // so this is the only way to get intent
+        // so this is the only way to get intent when activity is visible
         setIntent(intent)
     }
 
@@ -52,6 +57,13 @@ class PlayerActivity : AppCompatActivity() {
         val playerOnBackPressed = mPlayerFragment?.onBackPressed()
         if (playerOnBackPressed == null || !playerOnBackPressed) {
             super.onBackPressed()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (!isChangingConfigurations) {
+            viewModel.disconnect()
         }
     }
 }

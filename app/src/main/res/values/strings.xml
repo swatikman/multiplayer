@@ -12,4 +12,5 @@
     <string name="enter_message_hint">Enter message here…</string>
     <string name="emote_stickers">Stickers</string>
     <string name="emote_smiles">Smiles</string>
+    <string name="dialog_upload_title">Enter youtube video link</string>
 </resources>
