@@ -26,7 +26,7 @@
         </activity>
         <activity
             android:name=".ui.player.PlayerActivity"
-            android:launchMode="singleInstance"></activity>
+            android:launchMode="singleInstance" />
 
         <meta-data
             android:name="io.fabric.ApiKey"
@@ -40,6 +40,9 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity android:name=".ui.rooms.RoomsActivity">
+
         </activity>
     </application>
 

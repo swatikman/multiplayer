@@ -10,7 +10,7 @@ abstract class SocketManager {
 
     companion object {
 
-        const val EVENT_CONNECTED = "connected"
+        const val EVENT_JOINED = "joined"
         const val EVENT_DISCONNECT = "disc"
         const val EVENT_JOIN = "join"
 

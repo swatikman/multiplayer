@@ -57,7 +57,7 @@ class SmilesLoader {
             }
 
             if (withBigSmiles) {
-                // put smilesName into bigSmiles
+                // put smilesNames into bigSmiles
                 // to maintain smiles sorted
                 val bigSmiles = createBigSmiles(smilesNames)
                 bigSmiles.putAll(smilesNames)

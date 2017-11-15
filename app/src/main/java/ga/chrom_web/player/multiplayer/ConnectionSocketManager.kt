@@ -17,7 +17,7 @@ class ConnectionSocketManager : SocketManager() {
         if (!socket.connected()) {
             socket.connect()
         } else {
-            Utils.debugLog("But already connected...")
+            Utils.debugLog("But already joined...")
         }
     }
 
@@ -27,13 +27,17 @@ class ConnectionSocketManager : SocketManager() {
     }
 
     override fun subscribeOnEvents() {
-        socket.on(SocketManager.EVENT_CONNECTED) { args ->
-            Utils.debugLog("Connected. Data: " + args[0])
-            connectionListener?.connected(JsonUtil.jsonToObject(args[0], PlayerData::class.java))
+        socket.on(Socket.EVENT_CONNECT, {
+            Utils.debugLog("Connected")
+            connectionListener?.connected()
+        })
+        socket.on(SocketManager.EVENT_JOINED) { args ->
+            Utils.debugLog("Joined to room with :" + args[0])
+            connectionListener?.joined(JsonUtil.jsonToObject(args[0], PlayerData::class.java))
         }
         socket.on(SocketManager.EVENT_JOIN) { args ->
             Utils.debugLog("Someone joined maybe it's me: " + args[0])
-            connectionListener?.joined(JsonUtil.parseNick(args[0]))
+            connectionListener?.someoneJoined(JsonUtil.parseNick(args[0]))
         }
         socket.on(SocketManager.EVENT_DISCONNECT) { args ->
             Utils.debugLog("Someone disconnect: " + args[0])
@@ -49,15 +53,18 @@ class ConnectionSocketManager : SocketManager() {
         socket.on(Socket.EVENT_RECONNECT) { _ -> Utils.debugLog("Reconnect successful") }
     }
 
-    fun join(nick: String) {
-        socket.emit(SocketManager.EVENT_JOIN, JSONObject(mapOf("nick" to nick)))
+    fun join(nick: String, room: String) {
+        val data = JSONObject(mapOf("nick" to nick, "room" to room))
+        socket.emit(SocketManager.EVENT_JOIN, data)
     }
 
     interface ConnectionListener {
-        fun connected(playerData: PlayerData)
+        fun joined(playerData: PlayerData)
 
-        fun joined(nick: String?)
+        fun someoneJoined(nick: String?)
 
         fun someoneDisconnected(nick: String?)
+
+        fun connected()
     }
 }

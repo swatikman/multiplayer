@@ -49,7 +49,7 @@ class CustomYoutubePlayerFragment : Fragment(), YouTubePlayer.OnInitializedListe
         mHandler = Handler(Looper.getMainLooper())
         if (youTubeFragment == null) {
             youTubeFragment = YouTubePlayerSupportFragment()
-            fragmentManager.beginTransaction().replace(R.id.youtubeContainer, youTubeFragment).commit()
+            fragmentManager!!.beginTransaction().replace(R.id.youtubeContainer, youTubeFragment).commit()
             youTubeFragment?.initialize(BuildConfig.YouTubeApiKey, this)
         }
         realView = view

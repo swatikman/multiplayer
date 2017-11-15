@@ -25,6 +25,7 @@ import ga.chrom_web.player.multiplayer.data.ChatItem;
 import ga.chrom_web.player.multiplayer.data.ChatMessage;
 import ga.chrom_web.player.multiplayer.data.ChatNotification;
 import ga.chrom_web.player.multiplayer.data.PlayerData;
+import ga.chrom_web.player.multiplayer.data.Room;
 import ga.chrom_web.player.multiplayer.data.VideoData;
 import ga.chrom_web.player.multiplayer.di.App;
 
@@ -39,6 +40,7 @@ public class PlayerViewModel extends AndroidViewModel {
     private MutableLiveData<ChatItem> mMessage;
     private MutableLiveData<VideoData> mTimeSync;
     private MutableLiveData<PlayerData> mPlayerData;
+    private Room room;
     public ObservableField<String> messageField;
     @Inject
     ConnectionSocketManager mConnectionManager;
@@ -65,13 +67,21 @@ public class PlayerViewModel extends AndroidViewModel {
 
         mConnectionManager.setConnectionListener(new ConnectionSocketManager.ConnectionListener() {
             @Override
-            public void connected(@NonNull PlayerData playerData) {
-                mPlayerData.postValue(playerData);
-                mConnectionManager.join(prefs.getNick());
+            public void connected() {
+                if (room == null) {
+                    // TODO: do something
+                    return;
+                }
+                mConnectionManager.join(prefs.getNick(), room.getName());
             }
 
             @Override
-            public void joined(String nick) {
+            public void joined(@NonNull PlayerData playerData) {
+                mPlayerData.postValue(playerData);
+            }
+
+            @Override
+            public void someoneJoined(String nick) {
                 postChatNotification(nick, SocketManager.EVENT_JOIN);
             }
 
@@ -140,15 +150,19 @@ public class PlayerViewModel extends AndroidViewModel {
         SmilesLoader smilesLoader = new SmilesLoader();
         smilesLoader.getSmilesPaths(false, smiles -> mSmilesPaths.postValue(smiles));
         smilesLoader.getSmilesPaths(true, smiles -> {
-        mWithBigSmilesPaths.postValue(smiles);
-    });
+            mWithBigSmilesPaths.postValue(smiles);
+        });
+    }
+
+    public void setRoom(Room room) {
+        this.room = room;
     }
 
     void playerInitialized() {
         if (!mConnectionManager.isConnected()) {
             mConnectionManager.connect();
         } else {
-            // user is already connected
+            // user is already joined
             // player was reinitialized, so send data one more time
             mPlayerData.postValue(mPlayerData.getValue());
         }
@@ -180,6 +194,7 @@ public class PlayerViewModel extends AndroidViewModel {
     /**
      * Used in landscape mode
      * Emits message that consists of one smile
+     *
      * @param smile string code of smile
      */
     public void sendSmile(String smile) {

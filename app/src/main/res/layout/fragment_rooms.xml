@@ -1,0 +1,16 @@
+<layout>
+
+    <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="ga.chrom_web.player.multiplayer.ui.rooms.RoomsFragment">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/rvRooms"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never" />
+
+    </android.support.constraint.ConstraintLayout>
+</layout>

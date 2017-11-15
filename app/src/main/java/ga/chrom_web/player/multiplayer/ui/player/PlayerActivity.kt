@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.WindowManager
 import ga.chrom_web.player.multiplayer.R
 import ga.chrom_web.player.multiplayer.Utils
+import ga.chrom_web.player.multiplayer.data.Room
 
 class PlayerActivity : AppCompatActivity() {
 
@@ -24,12 +25,16 @@ class PlayerActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             mPlayerFragment = PlayerFragment()
-            // if intent is not empty, that means someone shared video
+            val bundle = Bundle()
+
             intent?.extras?.getString(SHARE_LINK).let { youtubeLink ->
-                val bundle = Bundle()
                 bundle.putString(SHARE_LINK, youtubeLink)
-                mPlayerFragment?.arguments = bundle
             }
+            intent?.extras?.getSerializable(Room.INTENT_KEY).let { room ->
+                bundle.putSerializable(Room.INTENT_KEY, room)
+            }
+
+            mPlayerFragment?.arguments = bundle
 
             supportFragmentManager.beginTransaction()
                     .replace(R.id.container, mPlayerFragment)
@@ -62,6 +67,7 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        Utils.debugLog("Destroying player activity")
         if (!isChangingConfigurations) {
             viewModel.disconnect()
         }

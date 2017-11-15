@@ -1,4 +1,4 @@
-package ga.chrom_web.player.multiplayer
+package ga.chrom_web.player.multiplayer.ui
 
 import android.content.Context
 import android.graphics.Canvas

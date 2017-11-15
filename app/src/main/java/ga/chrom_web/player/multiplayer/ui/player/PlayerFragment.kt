@@ -21,6 +21,7 @@ import android.widget.LinearLayout
 import ga.chrom_web.player.multiplayer.R
 import ga.chrom_web.player.multiplayer.Utils
 import ga.chrom_web.player.multiplayer.data.ChatItem
+import ga.chrom_web.player.multiplayer.data.Room
 import ga.chrom_web.player.multiplayer.databinding.FragmentPlayerBinding
 import ga.chrom_web.player.multiplayer.ui.SmilesAdapter
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
@@ -39,7 +40,7 @@ class PlayerFragment : Fragment() {
     }
 
     private lateinit var youtubePlayerFragment: CustomYoutubePlayerFragment
-    private lateinit var mViewModel: PlayerViewModel
+    private lateinit var viewModel: PlayerViewModel
     private lateinit var mBinding: FragmentPlayerBinding
     private var mChatAdapter: ChatAdapter? = null
     //    private var mIsOrientationChangedByButton = false
@@ -59,7 +60,7 @@ class PlayerFragment : Fragment() {
         mBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_player, container, false)
 
         youtubePlayerFragment = CustomYoutubePlayerFragment()
-        fragmentManager.beginTransaction()
+        fragmentManager!!.beginTransaction()
                 .replace(R.id.youtubeContainer, youtubePlayerFragment)
                 .commit()
 
@@ -72,12 +73,12 @@ class PlayerFragment : Fragment() {
                         toggleLandscapeAndFullscreen()
                     } else {
                         isFullScreen = true
-                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                     }
                 } else {
                     Utils.debugLog("full screen " + screenOrientation)
                     if (screenOrientation == Configuration.ORIENTATION_LANDSCAPE) {
-                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
                         toggleLandscapeAndFullscreen()
                     }
                     /*  else {
@@ -93,19 +94,19 @@ class PlayerFragment : Fragment() {
             }
 
             override fun onRewind(timeInMillis: Int) {
-                mViewModel.rewindTo(timeInMillis)
+                viewModel.rewindTo(timeInMillis)
             }
 
             override fun onClickPause() {
-                mViewModel.pause()
+                viewModel.pause()
             }
 
             override fun onClickPlay() {
-                mViewModel.play()
+                viewModel.play()
             }
 
             override fun onPlayerInitialized() {
-                mViewModel.playerInitialized()
+                viewModel.playerInitialized()
             }
         }
 
@@ -254,7 +255,7 @@ class PlayerFragment : Fragment() {
         } else { // landscape
             smilesInRow = SMILES_IN_ROW_LANDSCAPE
             smilesAdapter.onSmileClickListener = { smile ->
-                mViewModel.sendSmile(smile)
+                viewModel.sendSmile(smile)
                 hideSmilesKeyboard(true)
             }
         }
@@ -280,7 +281,7 @@ class PlayerFragment : Fragment() {
     private fun eraseSmileOrLastLetter() {
         // TODO: make long click listener
         mBinding.etMessage?.let { et ->
-            val smiles = mViewModel.smilesPaths.value
+            val smiles = viewModel.smilesPaths.value
             if (et.length() < 1 || smiles == null) {
                 return
             }
@@ -302,7 +303,7 @@ class PlayerFragment : Fragment() {
     }
 
     /**
-     * Converts LinkedHashMap to ArrayList<Pair> to have access by position inside adapter
+     * Converts LinkedHashMap to ArrayList<Pair> to have element access by position inside adapter
      */
     private fun convertSmilesPaths(smilePaths: LinkedHashMap<String, String>): ArrayList<Pair<String, String>> {
         val smilesArray = ArrayList<Pair<String, String>>()
@@ -326,38 +327,41 @@ class PlayerFragment : Fragment() {
 
     private fun createUploadDialog(link: String = "") {
         val edittext = EditText(activity)
-//        edittext.setText("https://www.youtube.com/watch?v=XGmFF82PE50")
         edittext.setText(link)
-        val adb = AlertDialog.Builder(activity)
+        val adb = AlertDialog.Builder(activity!!)
         adb.setTitle(getString(R.string.dialog_upload_title))
         // TODO: validate link for only youtube videos
         adb.setView(edittext)
 
-        adb.setPositiveButton(android.R.string.ok) { _, _ -> mViewModel.loadVideo(edittext.text.toString()) }
+        adb.setPositiveButton(android.R.string.ok) { _, _ -> viewModel.loadVideo(edittext.text.toString()) }
         adb.setNegativeButton(android.R.string.cancel, null)
         adb.show()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        mViewModel = ViewModelProviders.of(this).get(PlayerViewModel::class.java)
-
-        mViewModel.videoLink.observe(this, Observer { videoLink ->
+        viewModel = ViewModelProviders.of(this).get(PlayerViewModel::class.java)
+        arguments?.getSerializable(Room.INTENT_KEY)?.let { room ->
+            if (room is Room) {
+                viewModel.setRoom(room)
+            }
+        }
+        viewModel.videoLink.observe(this, Observer { videoLink ->
             videoLink?.let {
                 youtubePlayerFragment.loadVideo(videoLink)
             }
         })
-        mViewModel.videoTime.observe(this, Observer { timeInMillis ->
+        viewModel.videoTime.observe(this, Observer { timeInMillis ->
             timeInMillis?.let {
                 youtubePlayerFragment.seekToMillis(timeInMillis)
             }
         })
-        mViewModel.shouldPlay.observe(this, Observer { shouldPlay ->
+        viewModel.shouldPlay.observe(this, Observer { shouldPlay ->
             shouldPlay?.let {
                 playOrPause(shouldPlay)
             }
         })
-        mViewModel.playerData.observe(this, Observer { playerData ->
+        viewModel.playerData.observe(this, Observer { playerData ->
             playerData?.let {
                 youtubePlayerFragment.loadVideo(playerData.getVideo(),
                         playerData.getTimeInMilli(), playerData.isPlaying())
@@ -367,7 +371,7 @@ class PlayerFragment : Fragment() {
                 }
             }
         })
-        mViewModel.message.observe(this, Observer { message ->
+        viewModel.message.observe(this, Observer { message ->
             if (message == null) {
                 return@Observer
             }
@@ -375,17 +379,17 @@ class PlayerFragment : Fragment() {
             // after adding item scroll to the very bottom
             mBinding.rvChat.post { mBinding.rvChat.smoothScrollToPosition(mChatAdapter!!.itemCount - 1) }
         })
-        mViewModel.smilesPaths.observe(this, Observer { smilePaths ->
+        viewModel.smilesPaths.observe(this, Observer { smilePaths ->
             mHandler.post {
                 smilePaths?.let {
                     initSmiles(smilePaths)
                 }
             }
         })
-        mViewModel.withBigSmilesPaths.observe(this, Observer { smiles ->
+        viewModel.withBigSmilesPaths.observe(this, Observer { smiles ->
             mChatAdapter?.setSmilePaths(smiles!!)
         })
-        mBinding.playerViewModel = mViewModel
+        mBinding.playerViewModel = viewModel
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -393,10 +397,9 @@ class PlayerFragment : Fragment() {
         // save chat messages
         mChatAdapter?.let { adapter ->
             // make last message null to not post it on fragment retain
-            mViewModel.message.value = null
+            viewModel.message.value = null
             outState.putSerializable(MESSAGES, adapter.items)
         }
-        Utils.debugLog("saving fullscreen " + isFullScreen)
         outState.putBoolean(IS_FULLSCREEN, isFullScreen)
     }
 
@@ -408,7 +411,7 @@ class PlayerFragment : Fragment() {
         // if it is configuration then save time to retain it later
         val currentTimeMillis = youtubePlayerFragment.getCurrentTimeMillis()
         currentTimeMillis?.let { time ->
-            mViewModel.setCurrentTime(time / 1000)
+            viewModel.setCurrentTime(time / 1000)
         }
     }
 

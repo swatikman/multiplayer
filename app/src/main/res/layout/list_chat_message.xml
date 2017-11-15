@@ -43,7 +43,7 @@
             app:layout_constraintRight_toRightOf="@id/circleView"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <ga.chrom_web.player.multiplayer.CircleView
+        <ga.chrom_web.player.multiplayer.ui.CircleView
             android:id="@+id/circleView"
             android:layout_width="12sp"
             android:layout_height="12sp"
