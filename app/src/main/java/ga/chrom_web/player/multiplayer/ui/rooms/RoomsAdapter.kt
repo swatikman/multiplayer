@@ -38,13 +38,20 @@ class RoomsAdapter : RecyclerView.Adapter<RoomsAdapter.DataBindingViewHolder<Lis
         }
     }
 
+    fun clear() {
+        this.rooms.clear()
+        notifyDataSetChanged()
+    }
+
     override fun getItemCount() = rooms.size
 
     class DataBindingViewHolder<T : ViewDataBinding> : RecyclerView.ViewHolder {
+
         var binding: T
 
         constructor(binding: T) : super(binding.root) {
             this.binding = binding
         }
+
     }
 }

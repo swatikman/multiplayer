@@ -17,9 +17,6 @@ import ga.chrom_web.player.multiplayer.databinding.FragmentRoomsBinding
 import ga.chrom_web.player.multiplayer.ui.player.PlayerActivity
 
 
-/**
- * A simple [Fragment] subclass.
- */
 class RoomsFragment : Fragment() {
 
     private lateinit var viewModel: RoomsFragmentViewModel
@@ -29,7 +26,7 @@ class RoomsFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
-        binding = DataBindingUtil.inflate<FragmentRoomsBinding>(inflater, R.layout.fragment_rooms, container, false)
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_rooms, container, false)
 
         roomsAdapter = RoomsAdapter()
         roomsAdapter.clickListener = { room ->
@@ -38,7 +35,12 @@ class RoomsFragment : Fragment() {
         val layoutManager = LinearLayoutManager(activity)
         binding.rvRooms.layoutManager = layoutManager
         binding.rvRooms.adapter = roomsAdapter
-
+        binding.isError = false
+        binding.swiperefresh.setOnRefreshListener {
+            // TODO: clear adapter ???
+            roomsAdapter.clear()
+            viewModel.refresh()
+        }
         return binding.root
     }
 
@@ -52,9 +54,13 @@ class RoomsFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProviders.of(this).get(RoomsFragmentViewModel::class.java)
         viewModel.rooms.observe(this, Observer { rooms ->
-            rooms?.let {
-                roomsAdapter.addItems(it)
+            if (rooms != null) {
+                roomsAdapter.addItems(rooms)
+                binding.isError = false
+            } else {
+                binding.isError = true
             }
+            binding.swiperefresh.isRefreshing = false
         })
     }
 

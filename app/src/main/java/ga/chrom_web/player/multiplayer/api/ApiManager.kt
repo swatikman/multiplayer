@@ -1,40 +1,41 @@
 package ga.chrom_web.player.multiplayer.api
 
+import ga.chrom_web.player.multiplayer.data.Response
 import ga.chrom_web.player.multiplayer.data.Room
-import ga.chrom_web.player.multiplayer.di.App
 import io.reactivex.Observable
-import javax.inject.Inject
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.ObservableTransformer
-import java.util.ArrayList
-import java.util.stream.IntStream
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import java.util.*
 
 
 class ApiManager {
 
-    //    @Inject
-    private lateinit var apiService: ApiService
+    private var apiService: ApiService
 
     constructor(apiService: ApiService) {
-//        App.getComponent().inject(this)
         this.apiService = apiService;
     }
 
-//    public fun rooms(): Observable<ArrayList<Room>> = generateRooms()
-
-    public fun rooms(): Observable<ArrayList<Room>> = apiService.rooms()
+    fun rooms(): Observable<Response<ArrayList<Room>>> = apiService.rooms()
             .retry(3)
+            .flatMap { obsRooms ->
+                val response = Response.successResponse(obsRooms)
+                return@flatMap Observable.just(response)
+            }
+            .onErrorReturn { rooms ->
+                return@onErrorReturn Response.errorResponse()
+            }
             .compose(applySchedulers())
 
 
-    public fun smilesCheck(): Observable<String> = apiService.smilesCheck()
+    fun smilesCheck(): Observable<String> = apiService.smilesCheck()
             .retry(3)
             .compose(applySchedulers())
 
     private fun generateRooms(): Observable<ArrayList<Room>> {
         val rooms: ArrayList<Room> = ArrayList()
-        for (i in 1 .. 10) {
+        for (i in 1..10) {
             val room = Room()
             room.name = "Room #" + i
             room.description = "The most interesting room ever"

@@ -14,7 +14,7 @@ class RoomsActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         toolbar.title = getString(R.string.activity_rooms_title)
         setSupportActionBar(toolbar)
-
+        // TODO: handle share
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                     .replace(R.id.container, RoomsFragment())

@@ -47,7 +47,7 @@ public class LoginFragment extends Fragment {
         // TODO: make it as binding
         mBinding.btnLogin.setOnClickListener(view -> {
             mViewModel.login(mBinding.etNick.getText().toString());
-            ((MainActivity) getActivity()).startPlayer();
+            ((MainActivity) getActivity()).moveToRooms();
         });
 
 
